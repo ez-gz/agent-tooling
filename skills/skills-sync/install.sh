@@ -5,7 +5,7 @@ set -euo pipefail
 BASE_URL="https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/skills-sync"
 MANIFEST_URL="https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json"
 HOOKS_DST="$HOME/.claude/hooks"
-SKILLS_DST="$HOME/.claude/skills/skills-sync"
+SKILLS_DST="$HOME/.claude/skills/ez-gz-skills"
 SETTINGS="$HOME/.claude/settings.json"
 STATE_DIR="$HOME/.claude/state"
 STATE_FILE="$STATE_DIR/ez-gz-skills.json"
@@ -19,7 +19,7 @@ echo "✓ Hook installed to $HOOKS_DST"
 # 2. Install SKILL.md for /skills command
 mkdir -p "$SKILLS_DST"
 curl -fsSL "$BASE_URL/SKILL.md" -o "$SKILLS_DST/SKILL.md"
-echo "✓ /skills SKILL.md installed to $SKILLS_DST"
+echo "✓ /ez-gz-skills SKILL.md installed to $SKILLS_DST"
 
 # 3. Patch settings.json
 if ! command -v jq &>/dev/null; then
@@ -74,7 +74,7 @@ state.setdefault("declined", {})
 markers = {
     "keep-alive":             Path.home() / ".claude/state/keep-alive-installed",
     "talk-to-principal-pete": Path.home() / ".claude/skills/talk-to-principal-pete/SKILL.md",
-    "skills-sync":            Path.home() / ".claude/skills/skills-sync/SKILL.md",
+    "skills-sync":            Path.home() / ".claude/skills/ez-gz-skills/SKILL.md",
 }
 
 skills = manifest.get("skills", [])
@@ -96,4 +96,4 @@ rm -f "$MANIFEST_TMP"
 
 echo ""
 echo "Done. Restart Claude Code for the hook to take effect."
-echo "Run /skills at any time to see available and installed skills."
+echo "Run /ez-gz-skills at any time to see available and installed skills."

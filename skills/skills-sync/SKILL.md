@@ -1,9 +1,9 @@
 ---
-name: skills
+name: ez-gz-skills
 description: >
   List, install, and manage skills from ez-gz/skills. Shows new, updated, and
-  available skills with install status. Invoke as /skills to review and install,
-  /skills reset to clear all declined, /skills reset <id> to clear one.
+  available skills with install status. Invoke as /ez-gz-skills to review and install,
+  /ez-gz-skills reset to clear all declined, /ez-gz-skills reset <id> to clear one.
 platforms:
   - claude-code
 ---

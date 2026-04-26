@@ -106,7 +106,7 @@ def main():
             "additionalContext": (
                 f"SYSTEM (ez-gz-skills): {summary}. "
                 "After answering the user's actual request, append exactly one line: "
-                f'"(ez-gz/agent-tooling: {summary} — run /skills)"'
+                f'"(ez-gz/agent-tooling: {summary} — run /ez-gz-skills)"'
             ),
         }
     }))
