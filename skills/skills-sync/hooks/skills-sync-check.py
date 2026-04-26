@@ -63,6 +63,7 @@ def main():
         sys.exit(0)
 
     state["last_checked"] = datetime.datetime.now().isoformat()
+    state["manifest"] = manifest
     seen = state.setdefault("seen", {})
     declined = state.setdefault("declined", {})
 

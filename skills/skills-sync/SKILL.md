@@ -3,7 +3,8 @@ name: ez-gz-skills
 description: >
   List, install, and manage skills from ez-gz/skills. Shows new, updated, and
   available skills with install status. Invoke as /ez-gz-skills to review and install,
-  /ez-gz-skills reset to clear all declined, /ez-gz-skills reset <id> to clear one.
+  /ez-gz-skills refresh to force a manifest re-fetch, /ez-gz-skills reset to clear all
+  declined, /ez-gz-skills reset <id> to clear one.
 platforms:
   - claude-code
 ---
@@ -13,50 +14,67 @@ platforms:
 ## How to run this skill
 
 Read args:
-- No args or "list" → fetch manifest, show status, prompt to install any new/updated/available skills
+- No args or "list" → load manifest (from cache if fresh), show status, prompt to install any new/updated/available skills
+- "refresh" → force re-fetch manifest from GitHub, then list and install
 - "reset" → clear all declined entries
 - "reset <id>" → clear one declined entry by skill id
 
 ---
 
-## FETCH MANIFEST
+## LOAD MANIFEST AND STATE
+
+One script does both. If the user invoked `/ez-gz-skills refresh`, append `refresh` after the `-`; otherwise omit it.
 
 ```bash
-python3 -c "
-import json, urllib.request
-req = urllib.request.Request(
-    'https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json',
-    headers={'User-Agent': 'ez-gz-skills-sync/1'}
-)
-with urllib.request.urlopen(req, timeout=10) as r:
-    print(r.read().decode())
-"
-```
+python3 - <<'PYEOF'
+import json, sys, urllib.request, datetime
+from pathlib import Path
 
-If this fails, report the error and stop.
+MANIFEST_URL = "https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json"
+CACHE_TTL_S = 3600
 
----
+refresh = "refresh" in sys.argv[1:]
+f = Path.home() / ".claude/state/ez-gz-skills.json"
+state = json.loads(f.read_text()) if f.exists() else {}
 
-## LOAD STATE
+manifest = None
+if not refresh:
+    cached = state.get("manifest")
+    lc = state.get("last_checked")
+    if cached and lc:
+        try:
+            age = (datetime.datetime.now() - datetime.datetime.fromisoformat(lc)).total_seconds()
+            if age < CACHE_TTL_S:
+                manifest = cached
+        except Exception:
+            pass
 
-```bash
-python3 -c "
-import json; from pathlib import Path
-f = Path.home() / '.claude/state/ez-gz-skills.json'
-d = json.loads(f.read_text()) if f.exists() else {}
+if manifest is None:
+    req = urllib.request.Request(MANIFEST_URL, headers={"User-Agent": "ez-gz-skills-sync/1"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        manifest = json.loads(r.read())
+    state["manifest"] = manifest
+    state["last_checked"] = datetime.datetime.now().isoformat()
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(state, indent=2))
+
 print(json.dumps({
-    'seen':      d.get('seen', {}),
-    'installed': d.get('installed', {}),
-    'declined':  d.get('declined', {}),
-}, indent=2))
-"
+    "manifest":  manifest,
+    "seen":      state.get("seen", {}),
+    "installed": state.get("installed", {}),
+    "declined":  state.get("declined", {}),
+    "from_cache": manifest is not None and not refresh,
+}))
+PYEOF
 ```
+
+If this fails, report the error and stop. If `from_cache` is true, show `(cached)` after the table header line.
 
 ---
 
 ## DEFAULT: list and install
 
-1. Fetch manifest and load state.
+1. Run LOAD MANIFEST AND STATE.
 
 2. Classify each skill:
    - **installed** — `installed[id] == skill.version`
@@ -150,7 +168,7 @@ f.write_text(json.dumps(s, indent=2))
 print(count)
 "
 ```
-Report: "Cleared N declined skill(s). Run /skills to review."
+Report: "Cleared N declined skill(s). Run /ez-gz-skills to review."
 
 **reset <id>** — clears one declined entry:
 ```bash
