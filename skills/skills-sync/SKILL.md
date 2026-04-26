@@ -25,7 +25,7 @@ Read args:
 python3 -c "
 import json, urllib.request
 req = urllib.request.Request(
-    'https://raw.githubusercontent.com/ez-gz/skills/main/manifest.json',
+    'https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json',
     headers={'User-Agent': 'ez-gz-skills-sync/1'}
 )
 with urllib.request.urlopen(req, timeout=10) as r:
@@ -66,7 +66,7 @@ print(json.dumps({
 
 3. Print a compact status table:
    ```
-   ez-gz/skills
+   ez-gz/agent-tooling
    ─────────────────────────────────────────
      keep-alive            1.0   installed
      skills-sync           1.0   installed
@@ -97,7 +97,7 @@ When a skill has no `install_sh`, install by fetching SKILL.md:
 
 ```bash
 mkdir -p ~/.claude/skills/SKILL_ID
-curl -fsSL https://raw.githubusercontent.com/ez-gz/skills/main/SKILL_ID/SKILL.md \
+curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/SKILL_ID/SKILL.md \
   -o ~/.claude/skills/SKILL_ID/SKILL.md
 echo "installed"
 ```

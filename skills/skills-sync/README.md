@@ -18,10 +18,10 @@ State is kept at `~/.claude/state/ez-gz-skills.json`:
 Requires `jq` and `curl`.
 
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/skills-sync/install.sh | bash
 ```
 
-Copies the hook to `~/.claude/hooks/`, installs the `/skills` SKILL.md to `~/.claude/skills/skills-sync/`, patches `~/.claude/settings.json`, and seeds initial state. No artifacts outside `~/.claude/`.
+Downloads the hook to `~/.claude/hooks/`, installs the `/skills` SKILL.md to `~/.claude/skills/skills-sync/`, patches `~/.claude/settings.json`, and seeds initial state. No artifacts outside `~/.claude/`.
 
 ## Publishing a new skill
 

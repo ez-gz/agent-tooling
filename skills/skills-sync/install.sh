@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
-# skills-sync installer
-# Installs hook + /skills SKILL.md. All artifacts go to ~/.claude/ only.
+# skills-sync installer — safe to pipe through bash (curl ... | bash)
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_URL="https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/skills-sync"
+MANIFEST_URL="https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json"
 HOOKS_DST="$HOME/.claude/hooks"
 SKILLS_DST="$HOME/.claude/skills/skills-sync"
 SETTINGS="$HOME/.claude/settings.json"
 STATE_DIR="$HOME/.claude/state"
 STATE_FILE="$STATE_DIR/ez-gz-skills.json"
-MANIFEST_URL="https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json"
 HOOK_CMD="python3 ~/.claude/hooks/skills-sync-check.py"
 
-# 1. Copy hook
+# 1. Download hook
 mkdir -p "$HOOKS_DST"
-cp "$SKILL_DIR/hooks/skills-sync-check.py" "$HOOKS_DST/"
-echo "✓ Hook copied to $HOOKS_DST"
+curl -fsSL "$BASE_URL/hooks/skills-sync-check.py" -o "$HOOKS_DST/skills-sync-check.py"
+echo "✓ Hook installed to $HOOKS_DST"
 
 # 2. Install SKILL.md for /skills command
 mkdir -p "$SKILLS_DST"
-cp "$SKILL_DIR/SKILL.md" "$SKILLS_DST/"
+curl -fsSL "$BASE_URL/SKILL.md" -o "$SKILLS_DST/SKILL.md"
 echo "✓ /skills SKILL.md installed to $SKILLS_DST"
 
 # 3. Patch settings.json
@@ -72,7 +71,6 @@ seen = state.setdefault("seen", {})
 installed = state.setdefault("installed", {})
 state.setdefault("declined", {})
 
-# Detect already-installed skills by their known markers
 markers = {
     "keep-alive":             Path.home() / ".claude/state/keep-alive-installed",
     "talk-to-principal-pete": Path.home() / ".claude/skills/talk-to-principal-pete/SKILL.md",
@@ -82,7 +80,7 @@ markers = {
 skills = manifest.get("skills", [])
 for skill in skills:
     sid, ver = skill["id"], skill["version"]
-    seen[sid] = ver  # mark all current skills as seen — only future additions will surface
+    seen[sid] = ver
     marker = markers.get(sid)
     if marker and marker.exists():
         installed[sid] = ver
