@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "id": "keep-alive",
+      "name": "keep-alive",
+      "version": "0000-00-00",
+      "description": "Start or stop a cache-warming cron that sends a minimal ping every 45 minutes to prevent the 1-hour Anthropic prompt cache from expiring in long conversations. Invoked manually as /keep-alive [stop], or triggered automatically by the keep-alive hooks when context exceeds 50,000 tokens.",
+      "install_sh": "curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/keep-alive/install.sh | bash"
+    },
+    {
+      "id": "skills-sync",
+      "name": "skills",
+      "version": "0000-00-00",
+      "description": "List, install, and manage skills from ez-gz/skills. Shows new, updated, and available skills with install status. Invoke as /skills to review and install, /skills reset to clear all declined, /skills reset <id> to clear one.",
+      "install_sh": "curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/skills-sync/install.sh | bash"
+    },
+    {
+      "id": "talk-to-principal-pete",
+      "name": "talk-to-principal-pete",
+      "version": "0000-00-00",
+      "description": "Spawn a sub-agent that emulates Principal Pete's engineering thinking \u2014 a synthesis of senior principal-level wisdom for architecture brainstorming, design review, performance debugging, and code review. Use when you need a seasoned principal engineer's perspective on a design decision, want to pressure-test an architecture, need interface/API feedback, or want a blunt take on whether the approach is right. Invoke with /talk-to-principal-pete followed by the design question or context."
+    }
+  ]
+}
