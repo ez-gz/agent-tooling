@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-UserPromptSubmit hook: checks ez-gz/agent-tooling manifest once per 24h and injects
-a one-line note when new or updated skills are available.
+UserPromptSubmit hook: handles two cases —
+  1. First run after install → triggers onboarding via /ez-gz-skills
+  2. New/updated skills detected (once per 24h) → appends a note with changelog
 """
 import json, sys, urllib.request, datetime
 from pathlib import Path
 
 STATE_DIR = Path.home() / ".claude" / "state"
 STATE_FILE = STATE_DIR / "ez-gz-skills.json"
+FIRST_RUN_FLAG = STATE_DIR / "ez-gz-first-run"
 MANIFEST_URL = "https://raw.githubusercontent.com/ez-gz/agent-tooling/main/manifest.json"
 CHECK_INTERVAL_H = 24
 
@@ -48,11 +50,29 @@ def fetch_manifest():
         return None
 
 
+def inject(context):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": context,
+        }
+    }))
+
+
 def main():
     try:
         json.load(sys.stdin)
     except Exception:
         pass
+
+    # First-run takes priority: trigger onboarding before anything else
+    if FIRST_RUN_FLAG.exists():
+        inject(
+            "FIRST RUN (ez-gz/agent-tooling): The user just installed ez-gz/agent-tooling. "
+            "Before responding to their message, run /ez-gz-skills to walk them through "
+            "the available skills interactively. Handle their original message afterward."
+        )
+        return
 
     state = load_state()
     if not should_check(state):
@@ -78,7 +98,6 @@ def main():
         elif prev != ver:
             updated_skills.append({"skill": s, "from_version": prev})
 
-    # Mark all as seen now — no repeat injection until next version bump
     for s in new_skills:
         seen[s["id"]] = s["version"]
     for u in updated_skills:
@@ -89,28 +108,27 @@ def main():
     if not new_skills and not updated_skills:
         sys.exit(0)
 
+    # Build a summary that includes changelog so Claude can answer "what changed?"
     parts = []
-    if new_skills:
-        names = ", ".join(f'"{s["name"]}"' for s in new_skills)
-        parts.append(f"{len(new_skills)} new: {names}")
-    if updated_skills:
-        names = ", ".join(
-            f'"{u["skill"]["name"]}" ({u["from_version"]} → {u["skill"]["version"]})'
-            for u in updated_skills
-        )
-        parts.append(f"{len(updated_skills)} updated: {names}")
+    for s in new_skills:
+        entry = f'"{s["name"]}" ({s["version"]})'
+        if s.get("changelog"):
+            entry += f': {s["changelog"]}'
+        parts.append(f"NEW {entry}")
+    for u in updated_skills:
+        s = u["skill"]
+        entry = f'"{s["name"]}" ({u["from_version"]}→{s["version"]})'
+        if s.get("changelog"):
+            entry += f': {s["changelog"]}'
+        parts.append(f"UPDATED {entry}")
 
     summary = "; ".join(parts)
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "UserPromptSubmit",
-            "additionalContext": (
-                f"SYSTEM (ez-gz-skills): {summary}. "
-                "After answering the user's actual request, append exactly one line: "
-                f'"(ez-gz/agent-tooling: {summary} — run /ez-gz-skills)"'
-            ),
-        }
-    }))
+    inject(
+        f"SKILLS UPDATE (ez-gz/agent-tooling): {summary}. "
+        "After answering the user's actual request, mention the update in one line "
+        "and offer to install or explain what changed. "
+        f'Append: "(ez-gz/agent-tooling: updates available — run /ez-gz-skills)"'
+    )
 
 
 main()

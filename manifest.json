@@ -6,6 +6,7 @@
       "name": "keep-alive",
       "version": "2026-04-26",
       "description": "Start or stop a cache-warming cron that sends a minimal ping every 45 minutes to prevent the 1-hour Anthropic prompt cache from expiring in long conversations. Invoked manually as /keep-alive [stop], or triggered automatically by the keep-alive hooks when context exceeds 50,000 tokens.",
+      "changelog": "Initial release.",
       "install_sh": "curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/keep-alive/install.sh | bash"
     },
     {
@@ -13,13 +14,15 @@
       "name": "ez-gz-skills",
       "version": "2026-04-26",
       "description": "List, install, and manage skills from ez-gz/skills. Shows new, updated, and available skills with install status. Invoke as /ez-gz-skills to review and install, /ez-gz-skills refresh to force a manifest re-fetch, /ez-gz-skills reset to clear all declined, /ez-gz-skills reset <id> to clear one.",
+      "changelog": "Initial release.",
       "install_sh": "curl -fsSL https://raw.githubusercontent.com/ez-gz/agent-tooling/main/skills/skills-sync/install.sh | bash"
     },
     {
       "id": "talk-to-principal-pete",
       "name": "talk-to-principal-pete",
       "version": "2026-04-26",
-      "description": "Spawn a sub-agent that emulates Principal Pete's engineering thinking \u2014 a synthesis of senior principal-level wisdom for architecture brainstorming, design review, performance debugging, and code review. Use when you need a seasoned principal engineer's perspective on a design decision, want to pressure-test an architecture, need interface/API feedback, or want a blunt take on whether the approach is right. Invoke with /talk-to-principal-pete followed by the design question or context."
+      "description": "Spawn a sub-agent that emulates Principal Pete's engineering thinking \u2014 a synthesis of senior principal-level wisdom for architecture brainstorming, design review, performance debugging, and code review. Use when you need a seasoned principal engineer's perspective on a design decision, want to pressure-test an architecture, need interface/API feedback, or want a blunt take on whether the approach is right. Invoke with /talk-to-principal-pete followed by the design question or context.",
+      "changelog": "Initial release."
     }
   ]
 }

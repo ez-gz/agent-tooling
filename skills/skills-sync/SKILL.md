@@ -19,11 +19,14 @@ Read args:
 - "reset" → clear all declined entries
 - "reset <id>" → clear one declined entry by skill id
 
+If the hook injected a FIRST RUN context, run the FIRST RUN flow instead of the default.
+
 ---
 
 ## LOAD MANIFEST AND STATE
 
-One script does both. If the user invoked `/ez-gz-skills refresh`, append `refresh` after the `-`; otherwise omit it.
+One script loads manifest (cached or fresh) plus state in a single call.
+Pass `refresh` as an argument when the user invoked `/ez-gz-skills refresh`; omit it otherwise.
 
 ```bash
 python3 - <<'PYEOF'
@@ -59,36 +62,69 @@ if manifest is None:
     f.write_text(json.dumps(state, indent=2))
 
 print(json.dumps({
-    "manifest":  manifest,
-    "seen":      state.get("seen", {}),
-    "installed": state.get("installed", {}),
-    "declined":  state.get("declined", {}),
+    "manifest":   manifest,
+    "seen":       state.get("seen", {}),
+    "installed":  state.get("installed", {}),
+    "declined":   state.get("declined", {}),
+    "first_run":  Path.home().joinpath(".claude/state/ez-gz-first-run").exists(),
     "from_cache": manifest is not None and not refresh,
 }))
 PYEOF
 ```
 
-If this fails, report the error and stop. If `from_cache` is true, show `(cached)` after the table header line.
+If this fails, report the error and stop.
+
+---
+
+## FIRST RUN: onboarding
+
+Triggered when `first_run` is true in the LOAD output (or hook injected FIRST RUN context).
+
+1. Print a welcome:
+   ```
+   Welcome to ez-gz/agent-tooling!
+   Here are the available skills — you can ask about any of them before deciding.
+   ─────────────────────────────────────────
+   ```
+
+2. For each skill in the manifest (all of them, regardless of install status):
+   Show its name, one-line description, and changelog. Then ask:
+
+   ```
+   Install <name>? [y/n/?]  (? = tell me more)
+   ```
+
+   - **y** → install it (follow DEFAULT install steps), mark installed in state
+   - **n** → skip for now (do not mark declined — they can install later with /ez-gz-skills)
+   - **?** → give a fuller explanation drawing on the skill description and changelog, then re-ask
+
+3. After all skills, clear the first-run flag:
+
+```bash
+python3 -c "from pathlib import Path; Path.home().joinpath('.claude/state/ez-gz-first-run').unlink(missing_ok=True)"
+```
+
+4. Say: "You're all set. Run /ez-gz-skills any time to see and manage your skills."
 
 ---
 
 ## DEFAULT: list and install
 
-1. Run LOAD MANIFEST AND STATE.
+1. Run LOAD MANIFEST AND STATE. If `from_cache` is true, show `(cached)` after the table header.
 
 2. Classify each skill:
    - **installed** — `installed[id] == skill.version`
    - **update available** — `installed[id]` exists but differs from `skill.version`, and not declined at this version
    - **declined** — `declined[id] == skill.version`
-   - **available** — anything else (not yet installed or declined)
+   - **available** — anything else
 
 3. Print a compact status table:
    ```
    ez-gz/agent-tooling
    ─────────────────────────────────────────
-     keep-alive            1.0   installed
-     skills-sync           1.0   installed
-     talk-to-principal-pete  1.0   available
+     keep-alive              2026-04-26   installed
+     ez-gz-skills            2026-04-26   installed
+     talk-to-principal-pete  2026-04-26   available
    ```
    Status labels: `installed`, `available`, `update 1.0→1.1`, `declined`
 
@@ -97,15 +133,16 @@ If this fails, report the error and stop. If `from_cache` is true, show `(cached
 
 5. For each actionable skill, one at a time:
 
-   Show name, version, description, and install method:
+   Show name, version, description, changelog, and install method:
    - Has `install_sh` → will run the shell command
    - No `install_sh` → will fetch and install SKILL.md only
 
-   Ask: `Install? [y/n]  (n = don't ask again for this version)`
+   Ask: `Install? [y/n/?]  (? = tell me more, n = don't ask again for this version)`
 
-   **y, has install_sh**: run `install_sh`. On success, write installed state.
-   **y, no install_sh**: fetch and write SKILL.md (see below), then write installed state.
-   **n**: write declined state for this id + version.
+   - **y, has install_sh**: run `install_sh`. On success, write installed state.
+   - **y, no install_sh**: fetch and write SKILL.md (see below), then write installed state.
+   - **n**: write declined state for this id + version.
+   - **?**: explain further using description and changelog, then re-ask.
 
 ---
 
